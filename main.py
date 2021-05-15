@@ -7,6 +7,8 @@ from random import choice
 from rich import box, print
 from rich.console import Console
 from rich.table import Table
+from rich.panel import Panel
+from rich.columns import Columns
 from getch import getch # py-getche
 from tabulate import tabulate
 from core import getpass_ak
@@ -79,7 +81,7 @@ def codigo():
         print("[bold green]Você respondeu todas as perguntas, é um expert nesse assunto!")
         sleep(1.3)
         finalizado()
-        abrirPrimeiraTela(4)
+        abrirPrimeiraTela(4, LoginID)
 
 # funcoes de utilidades, sair de tela, timer, limpar tela, animacao
 
@@ -88,20 +90,20 @@ def abrirMenu(tempo):
     limpaTela()
     Menu() 
 
-def abrirPrimeiraTela(tempo):
+def abrirPrimeiraTela(tempo, id_login):
     sleep(tempo)
     limpaTela()
-    primeiraTela()
+    primeiraTela(id_login)
 
 def abrirPergunta(tempo):
     sleep(tempo)
     limpaTela()
     prePergunta()
 
-def abrirPerfil(tempo):
+def abrirPerfil(tempo, id_login):
     sleep(tempo)
     limpaTela()
-    perfil()
+    perfil(id_login)
 
 def abrirRkgTela(tempo):
     sleep(tempo)
@@ -129,7 +131,14 @@ def reset(tempo):
     limpaTela()
 
 def linhas():
-    print('_' * 30)
+    print('\n' + '_' * 30)
+
+def caixa(texto):
+    dados = texto 
+
+    painel = [Panel(dados)]
+    console.print(Columns(painel))
+
 
 def animacao(texto, tempo):
     with console.status(texto) as status:
@@ -232,7 +241,7 @@ def Login():
         animacao("[bold green]Entrando...", 1.35)
 
         print("[bold green]\nLogin feito com sucesso!")  
-        abrirPrimeiraTela(0.6)
+        abrirPrimeiraTela(0.6, LoginID)
 
     else:
         animacao("[bold red] ", 1.35)
@@ -243,29 +252,35 @@ def Login():
 
 # submenus
 
-def perfil():
-    #updata_user()
-    r = consultData_user_id(LoginID)
-
+def perfil(id_login):
+    escolha=0
+    r = consultData_user_id(id_login)
+    
+    nick= r[0]['nickname']
     nome = r[0]['nome']
     senhaLogin = r[0]['senha']
+    tamSenha = len(senhaLogin)
+    senha = '*'*tamSenha
+    print()
+    
+    dados = f"[bold white]Nome: [bold green]{nome}[/bold green]\n[bold white]Nickname: [bold green]{nick}[/bold green]\n[bold white]Senha: [bold green]{senha}"
+    caixa(dados)
+   
 
-    print(nome)
-    print(nickLogin)
-    print('\n1. Trocar nick')
-    print('2. Trocar senha')
-    print('3. Deletar conta')
-    print('9. Voltar')
-    escolha=0
+    print('\n[bold white][ [bold cyan]1 [bold white]] - Trocar nickname')
+    print('[bold white][ [bold cyan]2 [bold white]] - Trocar senha')
+    print('[bold white][ [bold cyan]3 [bold white]] - [bold red]Deletar conta')
+    print('[bold white][ [bold cyan]9 [bold white]] - Voltar')
 
-    while escolha !='3':
-        escolha=str(input('-> '))
-        
-        if escolha=='1':
-            print(nickLogin)
-            novoNick=str(input('\nDigite novo nick: '))
+    while escolha != '9':
+        escolha = (input('\n-> '))
+
+        if escolha == '1':
             nickDict = []
-            listaNicks=consultData_user()
+            listaNicks = consultData_user()
+            escolhaLog = 0
+
+            novoNick=(input('\nDigite seu novo nick: '))
 
             for i in listaNicks:
                 nicknames = (i['nickname'])
@@ -273,44 +288,77 @@ def perfil():
 
             while novoNick in nickDict: 
                 print("[bold red]Nickname já cadastrado. Tente novamente")
-                novoNick = str(input('Digite seu novo nick: '))
-            print("Você tem certeza que deseja trocar de nick? (S/N)")
-            escolhaLog=getch()
-            if escolhaLog=='S' or 's':
-                animacao("Trocando nick...", 1)
-                print("[bold green]Mudança de nick feita com sucesso!")
+                novoNick = (input('Digite seu novo nick: '))
 
-        elif escolha=='2':
-            # se for senha incorreta WHILE
-            senhaAtual=str(input('\nDigite sua senha atual: '))
-            if senhaAtual == senhaLogin:
-                novaSenha=str(input('\nDigite sua nova senha: '))
-                while len(novaSenha)<6:
-                    print("[bold red]A senha precisa ter no mínimo 6 caracteres!")
-                    novaSenha=str(input('\nDigite sua nova senha: '))
-                if novaSenha == senhaLogin:
-                    print("[bold red]As senhas não podem ser iguais!")
-                    novaSenha=str(input('\nDigite sua nova senha: '))
+            while escolhaLog != 'N' or escolhaLog != 'n':
+                print("Você tem certeza que deseja trocar de nick? (S/N)")
+                escolhaLog = (input())
+
+                if escolhaLog == 'S' or escolhaLog == 's':
+                    animacao("Trocando nick...", 1)
+                    print("\n[bold green]Mudança de nick feita com sucesso!")
+                    updata_user(novoNick, senhaLogin, LoginID)
+                    abrirMenu(0.4)
+
+                elif escolhaLog == 'N'or escolhaLog == 'n':
+                    animacao("[bold cyan]Cancelando...",1)
+                    abrirPerfil(0.4, LoginID)
+
                 else:
+                    print("[bold red]Opção inválida. Tente novamente")
+
+        elif escolha == '2':
+            senhaAtual = 0
+            while senhaAtual!=senhaLogin:
+                senhaAtual = getpass_ak.getpass('\nDigite sua senha atual: ')
+
+                if senhaAtual == senhaLogin:
+                    novaSenha = getpass_ak.getpass('\nDigite sua nova senha: ')
+
+                    while len(novaSenha) < 6:
+                        print("[bold red]A senha precisa ter no mínimo 6 caracteres!")
+                        novaSenha = getpass_ak.getpass('\nDigite sua nova senha: ')
+
+                    while novaSenha == senhaLogin:
+                        print("[bold red]As senhas não podem ser iguais!")
+                        novaSenha = getpass_ak.getpass('\nDigite sua nova senha: ')
+
                     updata_user(nickLogin, novaSenha, LoginID)
-            else:
-                print("[bold red]Senha incorreta.")
+                    animacao("[bold green]Trocando senha...", 1)
+                    print("\n[bold green]Senha trocada com sucesso!")
+                    abrirMenu(0.4)
+
+                elif senhaAtual != senhaLogin:
+                    print("[bold red]Senha incorreta. Tente novamente.")
+                    
             
-        elif escolha=='3':
-            print("Você tem certeza? (S/N)")
-            escolhaDel=getch()
-            if escolhaDel=='S' or escolhaDel=='s':
-                animacao("[bold red]Deletando conta...", 1)
-                del_user(LoginID)
-                print("[bold green]Conta deletada com sucesso!")
-                abrirMenu(0.9)
-            else:
-                animacao("",0)
-                abrirPrimeiraTela(0.7)
+        elif escolha == '3':
+            escolhaDel = 0
+
+            while escolhaDel != 'N' or escolhaDel != 'n':
+                print("Você tem certeza? (S/N)")
+                escolhaDel = input()
+
+                if escolhaDel == 'S' or escolhaDel == 's':
+                    animacao("[bold red]Deletando conta...", 1)
+                    del_user(LoginID)
+                    print("[bold green]Conta deletada com sucesso!")
+                    abrirMenu(0.9)
+
+                elif escolhaDel == 'N' or escolhaDel == 'n':
+                    animacao("[bold cyan]Cancelando...",0)
+                    abrirPerfil(0.7, LoginID)
+
+                else:
+                    print("[bold red]Opção inválida.")  
         
-        elif escolha=='9':
+        elif escolha == '9':
             animacao("[bold cyan]Voltando...", 0.7)
-            abrirPrimeiraTela(0)
+            abrirPrimeiraTela(0, LoginID)
+
+        else:
+            print("[bold red]Opção Inválida. Tente novamente.")
+            abrirPerfil(0.7, LoginID)
             
 
 def rankingTela():
@@ -340,9 +388,10 @@ def rankingTela():
     voltar = getch()
 
     if voltar != '':
-        abrirPrimeiraTela(0.5)
+        abrirPrimeiraTela(0.5, LoginID)
+
     else:
-        abrirPrimeiraTela(0.5) 
+        abrirPrimeiraTela(0.5, LoginID) 
 
 def rankingMenu():
     print("menu/ranking")
@@ -352,9 +401,9 @@ def rankingMenu():
 
     # cria tabela de ranking
     table = Table(show_header=True, header_style="bold green", box=box.DOUBLE_EDGE, )
-    table.add_column("Rank", style="dim", width=4)
-    table.add_column("   Nickname", style="dim", width=14)
-    table.add_column("Pts", justify="right", style="dim", width=3)
+    table.add_column("Rank", style="bold", width=4)
+    table.add_column("   Nickname", style="bold", width=14)
+    table.add_column("Pts", justify="right", style="bold", width=3)
 
     for t in listaRanking: 
         listaNickRkg = (t['nickname']) 
@@ -370,6 +419,7 @@ def rankingMenu():
     voltar=getch()
     if voltar != '':
         abrirMenu(0)
+
     else:
         abrirMenu(0) 
 
@@ -437,7 +487,7 @@ def pergunta(num):
 
         elif escolha == '9':
             animacao("[bold cyan]Saindo...", 0.8)
-            abrirPrimeiraTela(0)
+            abrirPrimeiraTela(0, LoginID)
         
         else:
             print("[bold red]\nEscolha inválida.")
@@ -468,16 +518,19 @@ def continuaPerg(resposta, resp, pontuacao, info):
 
 # menu secundário
 
-def primeiraTela():
+def primeiraTela(id_login):
+    print()
     escolha = 0
-    score = consultData_user_id(LoginID) # pega score atualizado
+    r = consultData_user_id(id_login) # pega score atualizado
+    nick = r[0]['nickname']
+    score = r[0]['score']
+
+    dados= f"[bold white]Nome: [bold green]{nick}[/bold green]\n[bold white]Score: [bold green]{score}"
+    caixa=(dados)
 
     while escolha != '9':
-        print(f'\nNick: {nickLogin}')
-        print('Score: ',score[0]['score'])
-
         print("\n[bold white][ [bold cyan]1 [bold white]] - Iniciar")
-        #print("[bold white][ [bold cyan]2 [bold white]] - Perfil")
+        print("[bold white][ [bold cyan]2 [bold white]] - Perfil")
         print("[bold white][ [bold cyan]3 [bold white]] - Ranking")
         print("[bold white][ [bold cyan]9 [bold white]] - Sair")
         linhas()
@@ -488,7 +541,7 @@ def primeiraTela():
             abrirPergunta(0.5)
 
         elif escolha == '2':
-            abrirPerfil(0.5)
+            abrirPerfil(0.5, LoginID)
         
         elif escolha == '3':
             abrirRkgTela(0.5)
@@ -498,21 +551,19 @@ def primeiraTela():
 
         else:
             (print('[bold red]\nEscolha inválida. Tente novamente')) 
-            abrirPrimeiraTela(0.8)
+            abrirPrimeiraTela(0.8, LoginID)
 
 # menu principal
-
-
 def Menu():
-    escolha = 0
-   
-    while escolha != '9':      
-        print("[bold white]\n\n[ [bold cyan]1 [bold white]] - Login")
-        print("[bold white][ [bold cyan]2 [bold white]] - Cadastro")
-        print("[bold white][ [bold cyan]3 [bold white]] - Ranking")
-        print("[bold white][ [bold cyan]9 [bold white]] - Sair ")
-        print('_'*30)
-        
+    escolha = 0   
+
+    while escolha != '9':  
+        print("[b]\n\n[ [bold cyan]1[/bold cyan] [b]] - Login")
+        print("[b][ [bold cyan]2[/bold cyan] [b]] - Cadastro")
+        print("[b][ [bold cyan]3[/bold cyan] [b]] - Ranking")
+        print("[b][ [bold cyan]9[/bold cyan] [b]] - Sair")
+        linhas()
+
         escolha=str(input('\nEscolha uma opção -> '))
 
         if escolha == '1':
@@ -532,8 +583,6 @@ def Menu():
         else:
             print("[bold red]\nEscolha inválida. Tente novamente")
             abrirMenu(0.8)
-
-
 
 printB()
 Menu()
