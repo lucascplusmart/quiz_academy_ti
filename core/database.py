@@ -1,161 +1,118 @@
 import sqlite3
 
-connection = sqlite3.connect('./core/dados.db')
-cursor =connection.cursor()
+class master():
 
-# retorna o request do dados no formato de dicionario
-def dict_factory(cursor, row):
-        dicionario = {}
-        for idx, col in enumerate(cursor.description):
-            dicionario[col[0]] = row[idx]
-        return dicionario
-        
-# =======>    Usuario - INICIO <=======
+        def __init__(self):
+                self._connection = sqlite3.connect('./core/dados.db')
+                self._cursor = self._connection.cursor()
 
-def add_user(nickname,nome,senha,data_nasc):
-        cursor.execute('''INSERT INTO usuario(nickname,nome,senha,data_nasc) VALUES (?,?,?,?)''', (nickname,nome,senha,data_nasc))
-        connection.commit()
+        def dict_factory(self,cursor, row):
+                dicionario = {}
+                for idx, col in enumerate(self._cursor.description):
+                        dicionario[col[0]] = row[idx]
+                return dicionario
 
-def  updata_user(nickname,senha,idUpdate):
+class DataUser(master):
 
-        cursor.execute('''UPDATE usuario SET
-                nickname=?,senha=? where  id = ?''',
+        def add_user(self,nickname,nome,senha,data_nasc):
+                self._cursor.execute('''INSERT INTO usuario(nickname,nome,senha,data_nasc) VALUES (?,?,?,?)''', (nickname,nome,senha,data_nasc))
+                self._connection.commit()
+                
+
+        def updata_user(self,nickname,senha,idUpdate):
+                self._cursor.execute('''UPDATE usuario SET nickname=?,senha=? where  id = ?''',
                 (nickname,senha,idUpdate))
-        connection.commit()
+                self._connection.commit()
 
-def  updata_user_score(score,idUpdate):
+        def updata_user_score(self,score,idUpdate):
+               self._cursor.execute('''UPDATE usuario SET score=? where  id = ?''',(score,idUpdate))
+               self._connection.commit()
 
-        cursor.execute('''UPDATE usuario SET
-                score=? where  id = ?''',
-                (score,idUpdate))
-        connection.commit()
+        def del_user(self,idDeletar ):
+                self._cursor.execute('delete from usuario where id = {}'.format(idDeletar))
+                self._connection.commit()
 
-def  del_user(idDeletar):
-            cursor.execute('delete from usuario where id = {}'.format(idDeletar))
-            connection.commit()
-       
-def  del_user_all():
-           cursor.execute('DELETE FROM table usuario')
-           connection.commit()  
+        def del_user_all(self):
+                self._cursor.execute('DELETE FROM table usuario')
+                self._connection.commit()
 
-def consultData_user():
-        cursor.row_factory = dict_factory
-        cursor.execute('select usuario.ID, usuario.nickname, usuario.nome , usuario.senha, usuario.score from usuario')
-        return cursor.fetchall()
+        def consultData_user(self):
+                self._cursor.row_factory = self.dict_factory
+                self._cursor.execute('select usuario.ID, usuario.nickname, usuario.nome , usuario.senha, usuario.score from usuario')
+                
+                return self._cursor.fetchall()
 
-def consultData_user_id(idUser):
-        cursor.row_factory = dict_factory
-        cursor.execute('select usuario.ID, usuario.nickname,usuario.nome, usuario.score, usuario.senha from usuario where id ={}'.format(idUser))
-        return cursor.fetchall()
+        def consultData_user_id(self,idUser):
+                self._cursor.row_factory = self.dict_factory
+                self._cursor.execute('select usuario.ID, usuario.nickname,usuario.nome, usuario.score, usuario.senha from usuario where id ={}'.format(idUser))
+                
+                return self.cursor.fetchall()
 
-def consultData_ranking_user():
-        cursor.row_factory = dict_factory
-        cursor.execute('SELECT  nickname, score FROM usuario ORDER BY score DESC;')
-        return cursor.fetchall()
+        def consultData_ranking_user(self):
+                self._cursor.row_factory = self.dict_factory
+                self._cursor.execute('SELECT  nickname, score FROM usuario ORDER BY score DESC;')
 
-# =======> Usuario - FIM <======
+                return self._cursor.fetchall()
 
-#xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-# =======>    Conteudo - INICIO <======
-def add_content(titulo,pergunta,dica,informacao,pontuacao,resposta):
-        cursor.execute('''INSERT INTO conteudo(titulo,pergunta,dica,informacao,pontuacao,resposta) VALUES (?,?,?,?,?,?)''', (titulo,pergunta,dica,informacao,pontuacao,resposta))
-        connection.commit()
-
-def  updata_content(titulo,pergunta,dica,informacao,pontuacao,resposta,codUpdate):
-
-        cursor.execute('''UPDATE conteudo SET titulo=?,pergunta=? ,dica=? 
-                        ,informacao=?,pontuacao=?,resposta=? where  COD =?''',
-                        (titulo,pergunta,dica,informacao,pontuacao,resposta,codUpdate))
-        connection.commit()
-
-# verifica essa função 
-def  del_content(codDeletar):
-            cursor.execute('delete from conteudo where COD = {}'.format(codDeletar))
-            connection.commit()
-
-def  del_content_all(self):
-           cursor.execute('DELETE FROM table conteudo')
-           connection.commit()  
-
-# =======> Conteudo - FIM <======
-
-#xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-#xxxxxxxxxxxxxxxxxxxxx> RELACIONAMENTO  <xxxxxxxxxxxxxxx
-
-# =======> Responde - INICIO <======
-
-def add_responde(fk_usuario_ID,fk_conteudo_COD):
-        cursor.execute('''INSERT INTO responde(fk_usuario_ID,fk_conteudo_COD) VALUES (?,?)''', (fk_usuario_ID,fk_conteudo_COD))
-        connection.commit()
+class DataContent(master):
         
-# =======> Responde - Final<======
+        def add_content(self,titulo,pergunta,dica,informacao,pontuacao,resposta):
+                self._cursor.execute('''INSERT INTO conteudo(titulo,pergunta,dica,informacao,pontuacao,resposta) VALUES (?,?,?,?,?,?)''', (titulo,pergunta,dica,informacao,pontuacao,resposta))
+                self._connection.commit()
 
-#xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        def  updata_content(self,titulo,pergunta,dica,informacao,pontuacao,resposta,codUpdate):
 
-# =======> Alternativas  - INICIO <======
+                self._cursor.execute('''UPDATE conteudo SET titulo=?,pergunta=? ,dica=? 
+                                ,informacao=?,pontuacao=?,resposta=? where  COD =?''',
+                                (titulo,pergunta,dica,informacao,pontuacao,resposta,codUpdate))
+                self._connection.commit()
 
-def consultData_content_search(COD):
-        cursor.row_factory = dict_factory
-        cursor.execute('select * from conteudo where COD == {}'.format(COD))
-        return cursor.fetchall()
+        def  del_content(self,codDeletar):
+                self._cursor.execute('delete from conteudo where COD = {}'.format(codDeletar))
+                self._connection.commit()
 
-def consultData_content():
-        cursor.row_factory = dict_factory
-        cursor.execute('select * from conteudo')
-        return cursor.fetchall()
+        def  del_content_all(self):
+                self._cursor.execute('DELETE FROM table conteudo')
+                self._connection.commit()  
 
-# vai retorna uma lista dicionario contendo o COD das perguntas que o usuario já fez
-def consultData_content_user(idUser):
-        cursor.row_factory = dict_factory
-        cursor.execute('''SELECT conteudo.COD, conteudo.pergunta
-        FROM responde INNER JOIN  conteudo 
-        ON    conteudo.COD  = responde.fk_conteudo_COD
-        WHERE  responde.fk_usuario_ID == {}'''.format(idUser))
-        return cursor.fetchall()
+       
+        def add_responde(self,fk_usuario_ID,fk_conteudo_COD):
+                self._cursor.execute('''INSERT INTO responde(fk_usuario_ID,fk_conteudo_COD) VALUES (?,?)''', (fk_usuario_ID,fk_conteudo_COD))
+                self._connection.commit()
+                
+        
 
-# campo: a, b ,c , d ,e ....
-def add_alternatives(opcao,descricao,fk_conteudo_COD):
-        cursor.execute('''INSERT INTO alternativas(opcao,descricao,fk_conteudo_COD) VALUES (?,?,?)''', (opcao,descricao,fk_conteudo_COD))
-        connection.commit()
+        def consultData_content_search(self,COD):
+                self._cursor.row_factory = self.dict_factory
+                self._cursor.execute('select * from conteudo where COD == {}'.format(COD))
+                return self._cursor.fetchall()
 
-def consultData_alternatives(CODcontent):
-        cursor.row_factory = dict_factory
-        cursor.execute(''' 
-        SELECT alternativas.opcao ,alternativas.descricao
-        FROM conteudo INNER JOIN alternativas 
-        ON    conteudo.COD  ==  alternativas.fk_conteudo_COD 
-        WHERE conteudo.COD == {}'''.format(CODcontent))
-        return cursor.fetchall()
+        def consultData_content(self):
+                self._cursor.row_factory = self.dict_factory
+                self._cursor.execute('select * from conteudo')
+                return self._cursor.fetchall()
 
-# =======> Alternativas  - FINAL <======
+        def consultData_content_user(self,idUser):
+                self._cursor.row_factory = self.dict_factory
+                self._cursor.execute('''SELECT conteudo.COD, conteudo.pergunta
+                FROM responde INNER JOIN  conteudo 
+                ON    conteudo.COD  = responde.fk_conteudo_COD
+                WHERE  responde.fk_usuario_ID == {}'''.format(idUser))
+                return self._cursor.fetchall()
 
-#xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        def add_alternatives(self,opcao,descricao,fk_conteudo_COD):
+                self._cursor.execute('''INSERT INTO alternativas(opcao,descricao,fk_conteudo_COD) VALUES (?,?,?)''', (opcao,descricao,fk_conteudo_COD))
+                self._connection.commit()
 
-# chamadas:
+        def consultData_alternatives(self,CODcontent):
+                self._cursor.row_factory = self.dict_factoryy
+                self._cursor.execute(''' 
+                SELECT alternativas.opcao ,alternativas.descricao
+                FROM conteudo INNER JOIN alternativas 
+                ON    conteudo.COD  ==  alternativas.fk_conteudo_COD 
+                WHERE conteudo.COD == {}'''.format(CODcontent))
+                return self._cursor.fetchall()
 
-#add_user("L","lucas","123","05/04/2001") #id = 1
-#add_user("Li","lili","123","05/04/2001")  #id = 2
-#add_user("Lu","lulu","321","05/04/2001")  #id = 3
 
-#add_content("programação","ruby","teste","informação...",5,"A") #cod = 1
-#add_content("programação","c++","dica...","informação...",5,"B")    #cod = 2
-#add_content("programação","dart","dica...","informação...",5,"c")      #cod = 3
-#add_content("programação","portugol","dica...","informação...",5,"c")      #cod = 4
-  
-#add_responde(1,1)  #cod = 1
-#add_responde(1,2)  #cod = 2
-# user_id = 1 não fez sql e c
 
-#add_responde(2,3)  #cod = 3
-#add_responde(2,2)  #cod = 4
-
-#dd_alternatives("A","Calcular porcentagens",5)
-#add_alternatives("D","Realizar cálculos aritméticos de investimentos",5)
-#add_alternatives("C","Calcular o resto de uma divisão inteira",5)
-#add_alternatives("B","Retornar o módulo matemático (valor absoluto)",5)
-#updata_user_score(5,17)
-#print(consultData_raking_user())
-#print(consultData_user())
 
