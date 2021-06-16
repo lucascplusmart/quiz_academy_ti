@@ -207,7 +207,7 @@ class Profile:
 
             if senhaReg2 == senhaReg:
                 db.add_user(nickReg, nomeReg, senhaReg, dataReg) # cadastra usuario no banco de dados
-                func.animacao("[bold green]Cadastrando...", 1.35)
+                func.animation("[bold green]Cadastrando...", 1.35)
                 print("[bold green]\nCadastro concluído com sucesso!")
                 func.sound('point')
                 func.reset(0.8)  
