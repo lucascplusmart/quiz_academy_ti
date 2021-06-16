@@ -5,7 +5,7 @@ O projeto é inovador na metodologia de ensino, pois utiliza uma nova forma de e
 Desta forma, foi alcançado o objetivo 4 da “Educação de Qualidade” da Agenda 2030, que visa garantir uma educação de qualidade inclusiva e justa e proporcionar oportunidades de aprendizagem ao longo da vida para todos.
 
 
-  ## installation
+  ## Instalação
 
 ```console
 
