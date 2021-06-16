@@ -1,69 +1,38 @@
-﻿from os import system
-from time import sleep
-from rich import print, box
-from rich.align import Align
-from rich.table import Table
-from rich.console import Console
-from getch import getch # py-getch
+﻿from asciimatics.effects import Print, Mirage
+from asciimatics.renderers import FigletText, SpeechBubble
+from asciimatics.scene import Scene
+from asciimatics.screen import Screen
 
-from core.banner import Banner
-from core.database.database import DataUser
+from core.screens import Menus
 from core.functions import Functions
-from core.trees.trees import Trees
-from core.features import Features
-from core.screens import Screens
 
-console = Console()
+from pygame import mixer
+from os import system
+
+mixer.init()
+menus = Menus()
 func = Functions()
-bann = Banner()
-db = DataUser()
-feat = Features()
-screens = Screens()
 
-class Menus: # classe do menu principal e ranking
-    def __init__(self):
-        self.choice = 0
-    
-    def opening(self):
-        pass
-        
-        
-    def rankingMenu(self):
-        func.clear()
-        bann.banner()
-        print()
+# cria animacao inicial, coloca musica pra tocar em loop
+def intro(screen):  
+    system('mode 80,22 || mode.com 80,22')
+    song = mixer.Sound('core/sfx/loop.wav')
+    song.play(-1)      
+    effects = [
+        Mirage(screen, FigletText("Quiz Academy Ti", font='standard'),y=7, colour=Screen.COLOUR_CYAN),
 
-        console = Console()
+        Print(screen,
+                SpeechBubble("Aperte X para iniciar."),
+                screen.height-8,
+                speed=1, transparent=False)
+    ]
+    screen.play([Scene(effects, 500)])
 
-        tree = Trees("ranking", "# Ranking")
-        tree.createTrees()
-        tree.showTrees()
+Screen.wrapper(intro)
+func.sound('menu')
 
-        listaRanking = db.consultData_ranking_user()
-        cont = 1
+# tamanho do terminal para o quiz
+system('mode 65,42 || mode.com 65,42')
 
-        # cria tabela de ranking
-        table = Table(show_header=True, header_style="bold green", box=box.DOUBLE_EDGE, width=40, title_style='dim')
-        table.add_column("Rank", style="bold", width=2,)
-        table.add_column("Nickname", style="bold", width=10, justify="center")
-        table.add_column("Score", justify="right", style="bold", width=3)
-
-        for t in listaRanking: 
-            nickRkg = (t['nickname']) 
-            scoreRkg = (t['score'])
-
-            table.add_row(""+str(cont)+"º", nickRkg, str(scoreRkg))
-            cont+=1
-        
-        alignTable = Align(table, align="center") # alinha a tabela de ranking no centro da tela
-        console.print(alignTable)
-
-        print('\n')
-        print("Pressione qualquer tecla para voltar...".center(65))
-
-        voltar=getch()
-
-        if voltar != '':
-            print("")
-            func.sound('menu')
-            func.clear()
+# inicia o quiz
+menus.menuPrincipal()

@@ -1,11 +1,9 @@
-from core.quiz import StartQuiz
+from core.quiz import StartQuiz, CheckQuiz
 from core.functions import Functions
-from core.features import Features
 from core.database.database import DataUser
 from core.trees.trees import Trees
 from core.banner import Banner
 from core import getpass_ak
-from playsound import playsound
 
 from rich.columns import Columns
 from rich.console import Console
@@ -19,14 +17,13 @@ from time import sleep
 from os import system
 
 quiz = StartQuiz()
-feat = Features()
 func = Functions()
 db = DataUser()
 console = Console()
 bann = Banner() 
+check = CheckQuiz()
 
-system('mode 65,42 || mode.com 60,42')
-
+# classe contendo todas as telas do projeto
 class Screens:
     def __init__(self):
         self.choice = 0
@@ -56,9 +53,9 @@ class Screens:
                 if self.choice == '1':
                     func.clear()
                     bann.banner()
-                    quiz.startQuiz(idUser)
                     func.sound('menu')
-
+                    check.checkQuiz(idUser)
+                    
                 elif self.choice == '2':
                     func.sound('menu')
                     profile.profile(idUser)                    
@@ -114,6 +111,9 @@ class Screens:
             func.clear()
             bann.banner()
 
+screens = Screens()
+
+# cria um arquivo .md (markdown) pra cada tela, printa nome da tela
 class ScreenTrees():
     def __init__(self):
         pass
@@ -145,10 +145,71 @@ class ScreenTrees():
 
 sctree = ScreenTrees()
 
+# classe contendo perfil, cadastro e login
 class Profile:
 
     def __init__(self):
         self.choice = 0
+    
+    def register(self):
+        nomeReg = str(input('Nome completo: '))
+
+        while len(nomeReg) < 10:
+            print("[bold red]Informação incompleta. Digite seu nome novamente.")
+            func.sound('error')
+            nomeReg = str(input('Nome completo: '))
+
+        nickReg = str(input('Nickname: '))
+
+        nickDict = []
+        listaNicks = db.consultData_user()
+
+        for i in listaNicks:
+            nicknames = (i['nickname']) # pega lista de nicks no banco de dados
+            nickDict.append(nicknames)
+
+        while nickReg in nickDict: # vê se o nick já está cadastrado
+            print("[bold red]Nickname já cadastrado. Tente novamente")
+            func.sound('error')
+            nickReg = str(input('Nickname: '))
+
+        dataReg = str(input("Data de nascimento: "))
+        while len(dataReg) < 10:
+            print("[bold red]Informação incompleta. Tente novamente.") 
+            func.sound('error')
+            dataReg=str(input('Data de nascimento: '))
+
+        senhaReg = (getpass_ak.getpass('Crie uma senha com 6 caracteres: '))
+        while len(senhaReg) < 6:
+            print("[bold red]A senha precisa ter no mínimo 6 caracteres.")
+            func.sound('error')
+            senhaReg = (getpass_ak.getpass('Senha: '))
+
+        senhaReg2 = (getpass_ak.getpass('Confirme sua senha: '))
+        while len(senhaReg2) < 6:
+            print("[bold red]A senha precisa ter no mínimo 6 caracteres.")
+            func.sound('error')
+            senhaReg2 = (getpass_ak.getpass('Confirme sua senha: '))
+
+        if senhaReg2 == senhaReg:
+            db.add_user(nickReg, nomeReg, senhaReg, dataReg) # cadastra usuario no banco de dados
+            print()
+            func.animation("[bold green]Cadastrando...", 1.35)
+            print("[bold green]\nCadastro concluido com sucesso!")
+            func.sound('point')
+            func.reset(0.8)
+
+        else:
+            print('[bold red]As senhas não correspondem. Digite sua senha novamente: ')
+            func.sound('error')
+            senhaReg2 = (getpass_ak.getpass(''))
+
+            if senhaReg2 == senhaReg:
+                db.add_user(nickReg, nomeReg, senhaReg, dataReg) # cadastra usuario no banco de dados
+                func.animacao("[bold green]Cadastrando...", 1.35)
+                print("[bold green]\nCadastro concluído com sucesso!")
+                func.sound('point')
+                func.reset(0.8)  
 
     def login(self):
         
@@ -209,14 +270,18 @@ class Profile:
         senha = '*'*tamSenha
         print()
         
+        # caixa com os dados do usuario
         data = f"[bold white]Nome: [bold green]{nome}[/bold green]\n[bold white]Nickname: [bold green]{nick}[/bold green]\n[bold white]Senha: [bold green]{senha}"
         painel = [Panel(data)]
-        console.print(Columns(painel))
+        caixa = Columns(painel)
+        caixa_center = Align(caixa, align="center")
+        console.print(caixa_center)
+        print('\n')
     
-        print('[bold white][ [bold cyan]1 [bold white]] - Trocar nickname'.center(30))
-        print('[bold white][ [bold cyan]2 [bold white]] - Trocar senha'.center(30))
-        print('[bold white][ [bold cyan]3 [bold white]] - [bold red]Deletar conta'.center(30))
-        print('[bold white][ [bold cyan]9 [bold white]] - Voltar'.center(30))
+        print('[bold white][ [bold cyan]1 [bold white]] - Trocar nickname'.center(98))
+        print('[bold white][ [bold cyan]2 [bold white]] - Trocar senha'.center(95))
+        print('[bold white][ [bold cyan]3 [bold white]] - [bold red]Deletar conta'.center(105))
+        print('[bold white][ [bold cyan]9 [bold white]] - Voltar'.center(90))
 
         while self.choice != '9':
             self.choice = (input('\n-> '))
@@ -321,6 +386,7 @@ class Profile:
             
             elif self.choice == '9':
                 func.sound('menu')
+                print()
                 func.animation("[bold cyan]Voltando...", 0.7)
                 screens.firstScreen(idUser)
 
@@ -328,8 +394,11 @@ class Profile:
                 print("[bold red]Opção Inválida. Tente novamente.")
                 func.sound('error')
                 screens.firstScreen(idUser)
-                
-class Menus: # classe do menu principal e ranking
+
+profile = Profile()
+
+# classe do menu principal e ranking             
+class Menus: 
     def __init__(self):
         self.choice = 0
         
@@ -356,7 +425,7 @@ class Menus: # classe do menu principal e ranking
 
                 elif self.choice == '2':
                     func.sound('menu')
-                    feat.register()
+                    profile.register()
 
                 elif self.choice == '3':
                     func.sound('menu')
@@ -416,10 +485,6 @@ class Menus: # classe do menu principal e ranking
             func.sound('menu')
             func.clear()
 
-screens = Screens()
-profile = Profile()
-
 menu = Menus()
-menu.menuPrincipal()
 
         

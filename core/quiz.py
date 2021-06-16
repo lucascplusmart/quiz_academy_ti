@@ -1,15 +1,17 @@
 from time import sleep
 from random import choice
 from tabulate import tabulate
-from playsound import playsound
+
 from rich.console import Console
-from rich import print
 from rich.align import Align
 from rich.text import Text
+from rich import print
 
-from core.banner import Banner
+from core.banner import Banner, end
 from core.database.database import DataUser, DataContent
 from core.functions import Functions
+
+from asciimatics.screen import Screen
 
 user = DataUser()
 content = DataContent()
@@ -18,63 +20,70 @@ bann = Banner()
 
 console = Console()
 
-class PreQuiz: # classe principal, reunindo informações pre-quiz
+# classe principal, reunindo informações pre-quiz
+class PreQuiz:
     def __init__(self):
         self.answeredList = []
         self.notAnsweredList = []
         self.choice = 0
+        self.answeredCheck = []
+        self.notAnsweredCheck = []
 
     # lista  das perguntas/COD que o usuario já respondeu
     def answered(self, loginID):
-        global answeredCheck
-
         result = content.consultData_content_user(loginID)
         for r in result:
             self.answeredList.append(r["COD"])  
 
     # Perguntas(COD) que o usuario não respondeu
     def notAnswered(self):
-        global answeredCheck
-        global notAnsweredCheck
-        answeredCheck = []
-        notAnsweredCheck = []
-
         result = content.consultData_content()
-        for linha in result:
-            if (linha["COD"] not in self.answeredList):
-                self.notAnsweredList.append(linha["COD"])
+        for r in result:
+            if (r["COD"] not in self.answeredList):
+                self.notAnsweredList.append(r["COD"])
 
         # tira repetições sem transformar em set
         for i in self.answeredList:
-            if i not in answeredCheck:
-                answeredCheck.append(i)
+            if i not in self.answeredCheck:
+                self.answeredCheck.append(i)
 
         for t in self.notAnsweredList:
-            if t not in notAnsweredCheck:
-                notAnsweredCheck.append(t)
+            if t not in self.notAnsweredCheck:
+                self.notAnsweredCheck.append(t)
 
         # lista contendo codigo de perguntas nao respondidas
-        for x in answeredCheck:
-            if (x in notAnsweredCheck):
-                notAnsweredCheck.remove(x)      
+        for x in self.answeredCheck:
+            if (x in self.notAnsweredCheck):
+                self.notAnsweredCheck.remove(x)
     
     # pega quantidade de perguntas ja feitas, o codigo das perguntas nao feitas e printa uma mensagem se respondeu todas.
-    def codeChoice(self):
+    def codeChoice(self, loginID):
         global codeNum
-        qty = len(notAnsweredCheck)
+        qty = len(self.notAnsweredCheck)
 
+        # se tiver pelo menos 1 pergunta nao respondida, inicia o quiz
         if qty>=1:
-            codeNum = choice(list(notAnsweredCheck))
+            codeNum = choice(self.notAnsweredCheck)
+            start_quiz.startQuiz(loginID)
 
-        else:
+        # se nao, termina o quiz e printa o game over
+        elif qty<=0:
+            func.clear()
+            bann.banner()
+            print()
+
             func.animation("[bold green]", 2) 
-            playsound('core/sfx/point.wav')
+            func.sound('point')
             gameover = "[bold green]\n\nVocê respondeu todas as perguntas, é um expert nesse assunto!"
             gameover_align = Align(gameover, align='center')
             console.print(gameover_align)
+
             print()
             sleep(1.3)
             bann.game_over()
+            Screen.wrapper(end)
+            exit()
+
 
 quiz = PreQuiz()
 
@@ -84,48 +93,27 @@ class CheckQuiz(PreQuiz):
     def checkQuiz(self, loginID):
         quiz.answered(loginID)
         quiz.notAnswered()
-        quiz.codeChoice()
+        quiz.codeChoice(loginID)
 
 check_quiz = CheckQuiz()
-
-# classe para sair ou continuar o quiz
-class ExitQuestion(PreQuiz):
-    def exitQuestion(self, loginID):
-        check_quiz.checkQuiz(loginID)
-        print("[b][ [bold cyan]1[/bold cyan] [b]] - Continuar")
-        print("[b][ [bold cyan]2[/bold cyan] [b]] - Sair")
-
-        while self.choice !='2':
-            self.choice = str(input('\n -> '))
-
-            if self.choice == '1':
-                func.sound('menu')
-                func.clear()
-                start_quiz.startQuiz()
-
-            elif self.choice == '2':
-                func.sound('menu')
-                func.animation("[bold cyan]Saindo...", 0.6)
-                #screens.firstScreen() ARRUMAR ISSO
-
-            else:
-                func.sound('menu')
-                print("[bold red]Escolha inválida.")
-
-exit_question = ExitQuestion()
 
 # continuação do quiz, envia os pontos pro banco de dados
 class ContinueQuiz(PreQuiz):
 
     def continueQuiz(self, loginID):
-        check_quiz.checkQuiz(loginID)
+        print()
         func.animation("[bold cyan]Sua resposa está...", 1.3)
     
         if userAnswer == resposta:
-            print("[bold green]\nCorreta!\n")
-            playsound('core/sfx/point.wav')
+            correta = "[bold green]\nCorreta!\n"
+            correta_center = Align(correta, align="center")
+            print(correta_center)
+            func.sound('point')
+
             sleep(0.6)
-            print("Você ganhou [bold green]5 [bold white]pontos!")
+            points = "Você ganhou [bold green]5 [bold white]pontos!"
+            points_center = Align(points, align="center")
+            print(points_center)
 
             # pega score atual e soma com pontos da pergunta
             r = user.consultData_user_id(loginID) 
@@ -135,19 +123,24 @@ class ContinueQuiz(PreQuiz):
             user.updata_user_score(pontuacaoTotal, loginID)
             content.add_responde(loginID, codeNum)
 
-
         else:
-            print("[bold red]\nErrada!")
+            errada = "[bold red]\nErrada!"
+            func.sound('error')
+            errada_center = Align(errada, align="center")
+            print(errada_center)
             sleep(0.6)
+
             print(f'\nA resposta correta é a letra [bold green]{resposta}[/bold green].')
             info_center = Align(info, align="center")
+
             print()
             print(info_center)
             print()
-
+            
             content.add_responde(loginID, codeNum)
 
-        exit_question.exitQuestion(loginID)
+        sleep(2.5)
+        check_quiz.checkQuiz(loginID)
 
 continue_quiz = ContinueQuiz()
 
@@ -155,6 +148,9 @@ continue_quiz = ContinueQuiz()
 class QuizAcademy(PreQuiz):
     
     def MainQuiz(self, codeNum, loginID):
+        func.clear()
+        bann.banner()
+        print()
         
         questionsList = content.consultData_content_search(codeNum) # pega lista de perguntas e alternativas
         alternativesList = content.consultData_alternatives(codeNum)
@@ -177,18 +173,20 @@ class QuizAcademy(PreQuiz):
         table = [[text]]
         output = tabulate(table, tablefmt='fancy_grid')
 
-        title_box = Align(output, align="center") # alinha a tabela de ranking no centro da tela
+        # alinha a tabela de ranking no centro da tela
+        title_box = Align(output, align="center") 
         print()
         console.print(title_box)
         print()
     
+        # coloca a pergunta no centro da tela
         pergunta_center = Text(pergunta, justify='center')
         print(pergunta_center)
         print()
         func.lines()
         print()
         
-        #printa as alternativas
+        # printa as alternativas
         for i in alternativesList:
             alternativas = (i['opcao'])
             descricao = (i['descricao'])
@@ -204,7 +202,6 @@ class QuizAcademy(PreQuiz):
 
         print('\n1. Responder')
         print('2. Dica')
-        print('9. Sair')
 
         self.choice=0
 
@@ -215,9 +212,10 @@ class QuizAcademy(PreQuiz):
                 userAnswer = input('\nResposta -> ').upper() # upper() caso o usuario digite em minusculo
 
                 if userAnswer =='A' or userAnswer=='B' or userAnswer=='C' or userAnswer=='D':
-                        continue_quiz.continueQuiz(loginID)
+                    continue_quiz.continueQuiz(loginID)
                 else:
                     print("[bold red]\nEscolha inválida.")
+                    func.sound('error')
 
             elif self.choice == '2':
                 dica_center = Align(dica, align="center")
@@ -228,27 +226,20 @@ class QuizAcademy(PreQuiz):
                 if userAnswer =='A' or userAnswer=='B' or userAnswer=='C' or userAnswer=='D':
                     continue_quiz.continueQuiz(loginID)
                 else:
-                    print("[bold red]\nEscolha inválida.")           
-
-            elif self.choice == '9':
-                func.animation("[bold cyan]Saindo...", 0.8)
-                exit() # ARRUMAR ISSO
+                    print("[bold red]\nEscolha inválida.")  
+                    func.sound('error')         
             
             else:
                 print("[bold red]\nEscolha inválida.")
+                func.sound('error')
 
 main_quiz = QuizAcademy()
 
 # inicia o quiz
 class StartQuiz(PreQuiz):
-        
     def startQuiz(self, loginID):
-        check_quiz.checkQuiz(loginID)
         main_quiz.MainQuiz(codeNum, loginID)
     
-    def endQuiz(self):
-        pass
-
 start_quiz = StartQuiz()
 
     
