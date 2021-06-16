@@ -9,10 +9,10 @@ Desta forma, foi alcançado o objetivo 4 da “Educação de Qualidade” da Age
 
 ```console
 
-# faça um clone do repositório
+# faça um clone no repositório
 $ git clone https://github.com/lucascplusmart/quiz_academy_ti.git
 
-# mude para a pasta do quiz_academy_ti
+# mude para a pasta para quiz_academy_ti
 $ cd quiz_academy_ti
 
 # instale o python e o pip (se não tiver instalado)
