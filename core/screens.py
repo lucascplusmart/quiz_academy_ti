@@ -200,9 +200,10 @@ class Profile:
             func.reset(0.8)
 
         else:
-            print('[bold red]As senhas não correspondem. Digite sua senha novamente: ')
-            func.sound('error')
-            senhaReg2 = (getpass_ak.getpass(''))
+            while senhaReg2 != senhaReg:
+                print('[bold red]As senhas não correspondem. Digite sua senha novamente: ')
+                func.sound('error')
+                senhaReg2 = (getpass_ak.getpass('Senha: '))
 
             if senhaReg2 == senhaReg:
                 db.add_user(nickReg, nomeReg, senhaReg, dataReg) # cadastra usuario no banco de dados
